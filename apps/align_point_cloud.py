@@ -76,7 +76,8 @@ source_points, source_patches = extract_uniform_patches(
 source_descriptors = compute_lcd_descriptors(
     source_patches, model, batch_size=128, device=device
 )
-source_features = open3d.registration.Feature()
+# source_features = open3d.registration.Feature()
+source_features = open3d.pipelines.registration.Feature()
 source_features.data = np.transpose(source_descriptors)
 print("Extracted {} features from source".format(len(source_descriptors)))
 
@@ -86,28 +87,32 @@ target_points, target_patches = extract_uniform_patches(
 target_descriptors = compute_lcd_descriptors(
     target_patches, model, batch_size=128, device=device
 )
-target_features = open3d.registration.Feature()
+# target_features = open3d.registration.Feature()
+target_features = open3d.pipelines.registration.Feature()
 target_features.data = np.transpose(target_descriptors)
 print("Extracted {} features from target".format(len(target_descriptors)))
 
 threshold = 0.075
-result = open3d.registration.registration_ransac_based_on_feature_matching(
+mutual_filters = False
+mutual_filters = True
+result = open3d.pipelines.registration.registration_ransac_based_on_feature_matching(
     source_points,
     target_points,
     source_features,
     target_features,
+    mutual_filters,
     threshold,
-    open3d.registration.TransformationEstimationPointToPoint(False),
+    open3d.pipelines.registration.TransformationEstimationPointToPoint(False),
     4,
-    [open3d.registration.CorrespondenceCheckerBasedOnDistance(threshold)],
-    open3d.registration.RANSACConvergenceCriteria(4000000, 500),
+    [open3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(threshold)],
+    open3d.pipelines.registration.RANSACConvergenceCriteria(4000000, 500),
 )
 
 success = True
 if result.transformation.trace() == 4.0:
     success = False
 
-information = open3d.registration.get_information_matrix_from_point_clouds(
+information = open3d.pipelines.registration.get_information_matrix_from_point_clouds(
     source_points, target_points, threshold, result.transformation
 )
 n = min(len(source_points.points), len(target_points.points))
